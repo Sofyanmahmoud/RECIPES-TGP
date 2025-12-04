@@ -1,32 +1,32 @@
-import { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import LiquidEther from '../components/LiquidEther';
-import { UserIcon } from '../components/UserIcon';
+import { useState } from 'react'
+import { useAuth } from '../context/AuthContext'
+import { useNavigate } from 'react-router-dom'
+import LiquidEther from '../components/LiquidEther'
+import { UserIcon } from '../components/UserIcon'
 
 const Login = () => {
-  const [username, setUsername] = useState('emilys');
-  const [password, setPassword] = useState('emilyspass');
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [username, setUsername] = useState('emilys')
+  const [password, setPassword] = useState('emilyspass')
+  const { login } = useAuth()
+  const navigate = useNavigate()
+  const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
+    e.preventDefault()
+    setError('')
+    setIsLoading(true)
 
     setTimeout(async () => {
-      const result = await login(username, password);
+      const result = await login(username, password)
       if (result.success) {
-        navigate('/');
+        navigate('/')
       } else {
-        setError(result.message || 'Login failed');
-        setIsLoading(false);
+        setError(result.message || 'Login failed')
+        setIsLoading(false)
       }
-    }, 800);
-  };
+    }, 800)
+  }
 
   return (
     <div style={{ position: 'relative', height: '100vh', width: '100vw', overflow: 'hidden', fontFamily: 'Arial, sans-serif' }}>
@@ -62,16 +62,14 @@ const Login = () => {
 
           <div style={{ textAlign: 'center', marginBottom: 'clamp(20px, 4vw, 30px)' }}>
             
-            {/* --- NEW ICON REPLACES THE PURPLE CIRCLE --- */}
             <div style={{ 
               display: 'flex', 
               justifyContent: 'center', 
               marginBottom: '15px',
-              transform: 'scale(1.5)' // Make it bigger for the login page
+              transform: 'scale(1.5)' 
             }}>
               <UserIcon />
             </div>
-            {/* ------------------------------------------- */}
 
             <h2 style={{ margin: 0, fontSize: 'clamp(22px, 4vw, 28px)' }}>Welcome Back</h2>
             <p style={{ margin: '10px 0 0', opacity: 0.7, fontSize: 'clamp(14px, 2vw, 16px)' }}>Login as Admin</p>
@@ -149,8 +147,8 @@ const Login = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -163,6 +161,5 @@ const inputStyle: React.CSSProperties = {
   outline: 'none',
   boxSizing: 'border-box',
   transition: 'border-color 0.3s'
-};
-
-export default Login;
+}
+export default Login

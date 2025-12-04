@@ -15,7 +15,6 @@ export interface Recipe {
   image: string;
   cuisine: string;
   difficulty: string;
-  // Add other fields from DummyJSON if you need them later
 }
 
 export interface LoginResponse {

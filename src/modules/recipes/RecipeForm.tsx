@@ -1,222 +1,151 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { createRecipe, updateRecipe, getRecipe } from '../../api/recipeService';
-import { toast } from 'react-toastify';
+import { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { createRecipe, updateRecipe, getRecipe } from '../../api/recipeService'
+import { toast } from 'react-toastify'
 
 const RecipeForm = () => {
-    const { id } = useParams<{ id: string }>();
-    const navigate = useNavigate();
-    const isEditMode = Boolean(id);
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const isEditMode = Boolean(id)
 
-    const [formData, setFormData] = useState({
-        name: '',
-        cuisine: '',
-        difficulty: 'Easy',
-        image: ''
-    });
-    const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({ name: '', cuisine: '', difficulty: 'Easy', image: '' })
+  const [loading, setLoading] = useState(false)
+  const [preview, setPreview] = useState('')
 
-    useEffect(() => {
-        if (isEditMode && id) {
-            fetchRecipe(Number(id));
-        }
-    }, [id, isEditMode]);
+  useEffect(() => {
+    if (isEditMode && id) loadRecipe(Number(id))
+  }, [id, isEditMode])
 
-    const fetchRecipe = async (recipeId: number) => {
-        try {
-            setLoading(true);
-            const recipe = await getRecipe(recipeId);
-            setFormData({
-                name: recipe.name,
-                cuisine: recipe.cuisine,
-                difficulty: recipe.difficulty,
-                image: recipe.image
-            });
-        } catch (error) {
-            toast.error('Failed to load recipe');
-            navigate('/');
-        } finally {
-            setLoading(false);
-        }
-    };
+  const loadRecipe = async (id: number) => {
+    try {
+      setLoading(true)
+      const data = await getRecipe(id)
+      setFormData({ name: data.name, cuisine: data.cuisine, difficulty: data.difficulty, image: data.image })
+      setPreview(data.image)
+    } catch {
+      toast.error('Failed to load recipe')
+      navigate('/')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
-    };
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value })
+  }
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!formData.name || !formData.cuisine) {
-            toast.error('Please fill in all required fields');
-            return;
-        }
+  const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
 
-        try {
-            setLoading(true);
-            if (isEditMode && id) {
-                await updateRecipe(Number(id), formData);
-                toast.success('Recipe updated successfully!');
-            } else {
-                await createRecipe(formData);
-                toast.success('Recipe created successfully!');
-            }
-            navigate('/');
-        } catch (error) {
-            toast.error(isEditMode ? 'Failed to update recipe' : 'Failed to create recipe');
-        } finally {
-            setLoading(false);
-        }
-    };
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image too large (max 5MB)')
+      return
+    }
 
-    return (
-        <div style={{
-            position: 'fixed', // This floats it on top of everything
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            display: 'flex',
-            justifyContent: 'center', // Centers horizontally
-            alignItems: 'center',     // Centers vertically
-            zIndex: 9999, // Ensures it is above everything else
-            overflowY: 'auto'
-        }}>
-            <div style={{
-                width: '90%',
-                maxWidth: '450px', // Keeps the form small and nice
-                background: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(10px)',
-                borderRadius: '20px',
-                padding: '30px',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
-                display: 'flex',
-                flexDirection: 'column'
-            }}>
-                <h2 style={{
-                    color: 'white',
-                    marginBottom: '20px',
-                    textAlign: 'center',
-                    marginTop: 0
-                }}>
-                    {isEditMode ? 'Edit Recipe' : 'Add New Recipe'}
-                </h2>
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const res = reader.result as string
+      setFormData({ ...formData, image: res })
+      setPreview(res)
+    }
+    reader.readAsDataURL(file)
+  }
 
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                    
-                    <div>
-                        <label style={labelStyle}>Recipe Name</label>
-                        <input
-                            type="text"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleChange}
-                            placeholder="Enter name"
-                            required
-                            style={inputStyle}
-                        />
-                    </div>
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formData.name || !formData.cuisine) return toast.error('Required fields missing')
 
-                    <div>
-                        <label style={labelStyle}>Cuisine</label>
-                        <input
-                            type="text"
-                            name="cuisine"
-                            value={formData.cuisine}
-                            onChange={handleChange}
-                            placeholder="Enter cuisine"
-                            required
-                            style={inputStyle}
-                        />
-                    </div>
+    try {
+      setLoading(true)
+      if (isEditMode && id) {
+        await updateRecipe(Number(id), formData)
+        toast.success('Updated!')
+      } else {
+        await createRecipe(formData)
+        toast.success('Created!')
+      }
+      navigate('/')
+    } catch {
+      toast.error('Operation failed')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-                    <div>
-                        <label style={labelStyle}>Difficulty</label>
-                        <select
-                            name="difficulty"
-                            value={formData.difficulty}
-                            onChange={handleChange}
-                            style={inputStyle}
-                        >
-                            <option value="Easy">Easy</option>
-                            <option value="Medium">Medium</option>
-                            <option value="Hard">Hard</option>
-                        </select>
-                    </div>
+  return (
+    <div style={styles.overlay}>
+      <div style={styles.card}>
+        <h2 style={styles.title}>{isEditMode ? 'Edit Recipe' : 'New Recipe'}</h2>
 
-                    <div>
-                        <label style={labelStyle}>Image URL</label>
-                        <input
-                            type="url"
-                            name="image"
-                            value={formData.image}
-                            onChange={handleChange}
-                            placeholder="https://..."
-                            style={inputStyle}
-                        />
-                    </div>
+        <form onSubmit={handleSubmit} style={styles.form}>
+          <input name="name" placeholder="Recipe Name" value={formData.name} onChange={handleChange} required style={styles.input} />
+          <input name="cuisine" placeholder="Cuisine" value={formData.cuisine} onChange={handleChange} required style={styles.input} />
+          
+          <select name="difficulty" value={formData.difficulty} onChange={handleChange} style={styles.input}>
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
+          </select>
 
-                    <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            style={{
-                                flex: 1,
-                                padding: '12px',
-                                background: 'white',
-                                color: '#667eea',
-                                border: 'none',
-                                borderRadius: '10px',
-                                fontWeight: 'bold',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            {loading ? 'Saving...' : 'Save'}
-                        </button>
+          {/* Compact Image Section */}
+          <div style={{ width: '100%' }}>
+            {preview ? (
+              <div style={styles.previewContainer}>
+                <img src={preview} alt="Preview" style={styles.previewImage} />
+                <button type="button" onClick={() => { setFormData({ ...formData, image: '' }); setPreview('') }} style={styles.removeBtn}>×</button>
+              </div>
+            ) : (
+              <label style={styles.uploadBox}>
+                <span style={{ fontSize: '24px', marginRight: '10px' }}>📷</span>
+                <span style={{ fontSize: '14px', opacity: 0.8 }}>Upload Image</span>
+                <input type="file" accept="image/*" onChange={handleImage} style={{ display: 'none' }} />
+              </label>
+            )}
+          </div>
 
-                        <button
-                            type="button"
-                            onClick={() => navigate('/')}
-                            style={{
-                                flex: 1,
-                                padding: '12px',
-                                background: 'rgba(255,255,255,0.1)',
-                                color: 'white',
-                                border: '1px solid rgba(255,255,255,0.2)',
-                                borderRadius: '10px',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    );
-};
+          <div style={styles.btnGroup}>
+            <button type="submit" disabled={loading} style={{ ...styles.btn, background: 'white', color: '#667eea' }}>
+              {loading ? 'Saving...' : 'Save'}
+            </button>
+            <button type="button" onClick={() => navigate('/')} style={{ ...styles.btn, background: 'rgba(255,255,255,0.2)', color: 'white' }}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
 
-const labelStyle: React.CSSProperties = {
-    display: 'block',
-    color: 'white',
-    marginBottom: '5px',
-    fontSize: '14px',
-    fontWeight: '500'
-};
+const styles: Record<string, React.CSSProperties> = {
+  overlay: {
+    position: 'fixed', inset: 0, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999
+  },
+  card: {
+    width: '90%', maxWidth: '400px', background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(10px)',
+    borderRadius: '20px', padding: '25px', border: '1px solid rgba(255, 255, 255, 0.2)', boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)'
+  },
+  title: { color: 'white', textAlign: 'center', margin: '0 0 20px 0' },
+  form: { display: 'flex', flexDirection: 'column', gap: '12px' },
+  input: {
+    width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid rgba(136, 133, 133, 0.2)',
+    background: 'rgba(0, 0, 0, 0.2)', color: 'white', outline: 'none', boxSizing: 'border-box'
+  },
+  uploadBox: {
+    display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '10px',
+    borderRadius: '8px', border: '2px dashed rgba(255, 255, 255, 0.3)', background: 'rgba(0, 0, 0, 0.1)',
+    cursor: 'pointer', color: 'white', boxSizing: 'border-box'
+  },
+  previewContainer: { position: 'relative', width: '100%', borderRadius: '8px', overflow: 'hidden' },
+  previewImage: { width: '100%', height: '140px', objectFit: 'cover', display: 'block' },
+  removeBtn: {
+    position: 'absolute', top: '5px', right: '5px', width: '24px', height: '24px', borderRadius: '50%',
+    background: 'white', border: 'none', color: '#667eea', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+  },
+  btnGroup: { display: 'flex', gap: '10px', marginTop: '10px' },
+  btn: { flex: 1, padding: '12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }
+}
 
-const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '10px',
-    borderRadius: '8px',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    background: 'rgba(0, 0, 0, 0.2)',
-    color: 'white',
-    outline: 'none',
-    boxSizing: 'border-box'
-};
-
-export default RecipeForm;
+export default RecipeForm

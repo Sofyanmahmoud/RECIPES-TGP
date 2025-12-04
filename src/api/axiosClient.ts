@@ -1,9 +1,8 @@
-import axios from 'axios';
+import axios from 'axios'
 
 const axiosClient = axios.create({
-  baseURL: 'https://dummyjson.com',headers: {'Content-Type': 'application/json',},});
+  baseURL: 'https://dummyjson.com',headers: {'Content-Type': 'application/json',},})
 
-// Interceptor: Attach token to every request if logged in
 axiosClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -15,4 +14,4 @@ axiosClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-export default axiosClient;
+export default axiosClient
